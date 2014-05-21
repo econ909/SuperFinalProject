@@ -1,0 +1,12 @@
+#BlueJ class context
+comment0.params=
+comment0.target=Bet()
+comment1.params=money\ pot
+comment1.target=Bet(int,\ int)
+comment2.params=
+comment2.target=java.lang.String\ toString()
+comment3.params=
+comment3.target=int\ loseBet()
+comment4.params=
+comment4.target=int\ winBet()
+numComments=5

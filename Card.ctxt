@@ -1,0 +1,21 @@
+#BlueJ class context
+comment0.params=
+comment0.target=Card()
+comment1.params=suit\ ranking
+comment1.target=Card(int,\ int)
+comment2.params=
+comment2.target=int\ getSuit()
+comment3.params=
+comment3.target=int\ getRank()
+comment4.params=
+comment4.target=java.lang.String\ toString()
+comment4.text=\r\n\ Converts\ Card\ object\ into\ readable\ form.\r\n
+comment5.params=obj
+comment5.target=boolean\ equals(java.lang.Object)
+comment5.text=\r\n\ Return\ true\ if\ the\ cards\ are\ equivalent\ to\ each\ other.\r\n
+comment6.params=that
+comment6.target=int\ compareTo(Card)
+comment6.text=\r\n\ Compares\ two\ cards\:\ returns\ 1\ if\ the\ first\ card\ is\ greater\r\n\ -1\ if\ the\ seconds\ card\ is\ greater,\ and\ 0\ if\ they\ are\ the\ equivalent.\r\n
+comment7.params=card
+comment7.target=void\ printCard(Card)
+numComments=8
