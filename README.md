@@ -1,12 +1,9 @@
 SuperFinalProject
 =================
 
-The 3rd time trying this shit
+Got the Bet Class nested into a new Player Class. 
 
-
-Got the Bet Class added. Beginning stages of Final Project
-
-Stages 2 and 3 are complete. Just a little tinkering left to make it perfect.
+Stages 2 and 3 are complete. Finished verison.
 
 
 This program makes a gmae of blackjackwith 2 players.
