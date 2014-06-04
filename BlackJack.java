@@ -1,4 +1,4 @@
-
+import java.util.Scanner;
 /**
  * Write a description of class BlackJack here.
  * 
@@ -6,208 +6,174 @@
  * @version (a version number or a date)
  */
 public class BlackJack {
+    public final static int TOTAL_PLAYERS = 2;
+    private static int numPlayersStay = 0;
     private static Card [] deck = makeDeck();
-    private static Bet bet = new Bet();
+    
+    public static Card[] getDeck()  {
+        return deck;
+    }
     
     public static void main(String[] args) {
-        problem1();
-        problem2();
-        problem3();
-        problem4();
-        problem5();
-        problem6();
-        problem7(); // Extra Credit
+        Player [] players = makePlayers(TOTAL_PLAYERS);
+
+        System.out.print("\f");
+        int initialBet = 0;
+        newGame:
+        while (true)  { 
+            numPlayersStay = 0;
+            if (initialBet == 0)  { // skips opening bet if a tie breaker is needed
+                for (int i = 0; i < players.length; i++)  {
+                    System.out.println("Player " + (i+1) + ":" );
+                    players[i].bet.firstBet(/*initialBet*/); //must schange the firstBet to have while loop instead of recursion
+                }
+            }
+            for (int i = 0; i < players.length; i++)  {
+                deal(deck);
+                players[i].setScore(players[i].playerHand(i));
+                //System.out.println ("Player " + (i+1) + " score = " + players[i].getScore());
+            }
+
+            // Check to see if any players got immediate Blackjack:
+            for (int i = 0; i < players.length; i++) {
+                if (players[i].getScore() == 21) {
+                    System.out.println("Player " + (i+1) + " got BLACKJACK!");
+                    //System.out.println("Player " + (i+1) + " current score and bet: " + players[i].getScore() + " " + players[i].bet);
+                    players[i].bet.winBet();
+                    for (int k = 0; k < TOTAL_PLAYERS; k++)  {
+                        if (k != i) {
+                            players[k].bet.loseBet();
+                        }
+                    }
+                    continue newGame;
+                }            
+            }
+
+            // CHANGE BACK TO 'for' loop and get rid of 'while' loop
+            //for (int i = 0; i < players.length; i++)  { 
+
+            //System.out.println("Player " + (i+1) + ":");
+
+            for (int i = 0; i < players.length; i++)  {
+                //System.out.println("Before startGame(): Player " + (i+1) + "'s" + " score = " + players[i].getScore());
+                int gameOverValue = startGame(players, i);
+                if (gameOverValue >= 21 && gameOverValue < 100) break; // somebody blackjacked or busted
+                if (gameOverValue < 0)   break; // everybody stayed...
+                if (gameOverValue == 0)  continue;  // only one person stayed so next player's turn
+                if (gameOverValue >= 100) {
+                    initialBet = gameOverValue - 100;  // carry over the last bet since new Game will be tie-breaker
+                    
+                    continue newGame;
+                }
+            }
+            //System.out.println("Player " + (i+1) + ":");
+            //if (i >= players.length) {
+            
+            System.out.println("Play Again? (Y/N) ");
+            Scanner keyboard = new Scanner(System.in);
+            String answer = keyboard.next();
+            System.out.println();
+            if(answer.equalsIgnoreCase("N"))  {
+                System.err.println("GAME OVER");
+                System.exit(0);
+            }
+            initialBet = 0;  // brand new Game's initial bet will be zero
+            for(int i = 0; i < deck.length; i++)  {
+                deck[i].setInPlay(false);
+            }
+                
+        }
+        //System.out.println("Player " + (i+1) + ":");
+
     }
 
-    public static void problem1() {
-        System.out.println("-- Problem 1 --------------------");
+    public static int startGame(Player [] players, int i)  {
 
-        /*======= Problem 1 Comparing Objects ============
-        //a) Use the Card constructor that takes arguments to 
-        //   Make a variable card1, of type Card, set to the Ace of Spades
-        //   Make a variable card2, of type Card, set to the King of Spades
-        //   Make a variable card3, of type Card, set to card1 (no new Card)
-        //   Make a variable card4, of type Card, set to the Ace of Spades
-        Card card1 = new Card(3,1);
-        Card card2 = new Card(3,13);
-        Card card3 = card1;
-        Card card4 = new Card(3,1);
+        while (players[i].getScore() <= 21)  {
+            if (players[i].getScore() == 21)  {
+                System.out.println("Player " + (i+1) + " got BLACKJACK!");
+                System.out.println();
+                //System.out.println("Player " + (i+1) + " current score and bet: " + players[i].getScore() + " " + players[i].bet);
+                players[i].bet.winBet();
+                for(int k = 0; k < TOTAL_PLAYERS; k++)  {
+                    if(k != i) {
+                        players[k].bet.loseBet();
+                    }
+                }
+                return players[i].getScore(); //player.bet.getPot();
+            }
+            players[i].bet.remainBet(i);
+            int nextCard = hitMe(players[i]);
+            if(nextCard < 0)  {  // player chose to Stay instead of Hit
+                ++ numPlayersStay;
+                if(numPlayersStay >= TOTAL_PLAYERS)  {
+                    int maxPlayerIndex = -1;
+                    int maxScore = -1;
+                    boolean tiedScore = false;
+                    for(int k = 0; k < TOTAL_PLAYERS; k++){  
+                        if (players[k].getScore() > maxScore) {
+                            maxScore = players[k].getScore();
+                            maxPlayerIndex = k;
+                            tiedScore = false;
+                        }
+                        else if (players[k].getScore()== maxScore) {
+                            tiedScore = true;
+                        }
 
-        //b) Use the Card printCard method to print all your cards out 
-        Card.printCard(card1);
-        Card.printCard(card2);
-        Card.printCard(card3);
-        Card.printCard(card4);
+                    }
+                    if (tiedScore) {
+                        System.out.println ("Both scores are the same! All bets are reset to $0! Tie Breaker Round!!");
+                        System.out.println();
+                        return players[i].getBet().getBet() + 100;  // need to increment last bet by 100 in case was zero bet
+                    }                                    // (tie-breaker logic in main program loop will decrement)
+                    else {
+                        System.out.println ("Player " + (maxPlayerIndex+1) + " wins with a score of " + maxScore);
+                        players[maxPlayerIndex].bet.winBet();
+                        for(int k = 0; k < TOTAL_PLAYERS; k++){
+                            if(k != maxPlayerIndex)  {
+                                players[k].bet.loseBet(); 
+                            }
+                        }
+                        // ISNT WORKING YET!
+                        // ALL players have stayed, so return a negative value
+                        // IF Tie need to play again automatically and print alert
+                        return -1;
+                    }
+                }
+                // player chose to stay, but not all players have stayed yet...
+                return 0; //nextCard; // -player.bet.getPot(); 
+            }
+            else {
+                // player chose to get hit
+                players[i].setScore(nextCard + players[i].getScore());
+                System.out.println("Player " + (i+1) + " current score and bet: " + players[i].getScore() + " " + players[i].bet);  
+            } 
+        }
 
-        //c) Execute this statement to check for identity between card1 and card3
+        players[i].bet.loseBet();
 
-        System.out.println("Are card1 and card3 identical? " + (card1 == card3));
-
-        //   Now write a statement that checks for equivalence between card1 and card4
-
-        System.out.println("Are card1 and card4 equal? " + (card1.equals(card4))); 
-
-        //   Now write a statement that checks for identity between card1 and card4
-        System.out.println("Are card1 and card4 identical? " + (card1 == card4));
-        //d) Verify that this statement indicates that card1 comes before card2
-        //     in the ordering for cards
-
-        System.out.println("Comparing card1 and card2 gives: " + 
-            card1.compareTo(card2));
-
-        //e)   Modify the compareTo method in the card class so that 
-        //     Aces have a higher rank than Kings.  One way to do this is to 
-        //     create two int variables rank1 and rank2 and copy the ranks of
-        //     the two cards into them. Then, if rank1 is a 1, set it to 14.
-        //     Do the same to rank2. Then run this program again and verify
-        //     the output from d) now shows that the Ace comes after (has higher 
-        //     rank) than the King.
-
-        //------- End Problem 1 ------------------------------------*/
-    }
-
-    public static void problem2() {
-        System.out.println("-- Problem 2 --------------------");
-
-        /*======= Problem 2 Making a Deck of Cards ============
-        //a) Find the "nested for loop" slide from lecture.
-        //   Encapsulate the example code in a method below main so the
-        //   following statement works properly. makeDeck should return the
-        //   properly filled array of all Cards
-
-        //b) Find the "printDeck" slide from lecture. Copy that code
-        //   below main, then call the method so you can see your deck.
-        //   Debug any unexpected behavior
-        printDeck(deck);
-
-        //------- End Problem 2 ------------------------------------*/
-    }
-
-    public static void problem3() {
-        System.out.println("-- Problem 3 --------------------");
-
-        //*======= Problem 3 BlackJack Hand Score ============
-        //a) In Blackjack the object of the game is to get a collection of cards
-        //   with a score of 21. The score for a hand is the sum of scores for all
-        //   cards. The score for an ace is 1, for all face cards is ten, and for
-        //   all other cards the score is the same as the rank.
-        //   Example: the hand (Ace, 10, Jack, 3) has a total score of
-        //   1 + 10 + 10 + 3 = 24.
-
-        //   Write a method called handScore below main that takes an array of cards as an
-        //   argument and that returns the total score.
-
-        //b) Demo your method by creating an array of cards such as the hand
-        //   in the example, and verifying the proper calculation is made
-        Card[] hand = new Card[4];
-
-        hand[0] = new Card(0,1);
-        hand[1] = new Card(0,10);
-        hand[2] = new Card(0,11);
-        hand[3] = new Card(0,3);
-
-        System.out.println("My score is " + handScore(hand));
-
-        //------- End Problem 3 ------------------------------------*/
-    }
-
-    public static void problem4() {
-        System.out.println("-- Problem 4 --------------------");
-
-        //*======= Problem 4 Making a deal method ============
-        //a) One way to deal a card is to select a card at random from the deck.
-        //   This would mean creating a random integer from 0 to 51 and return
-        //   the card at that location in the array. You can use the randomInt
-        //   method from Assignment12 to generate this number. Or just multiply
-        //   Math.random() times 52 and cast the result as an int.
-        //
-        //   Write a method called deal below main. This method should receive
-        //   an array of cards as an argument and return a single card. Test
-        //   your method by running this code:
-
-        //Card demoCard = deal(deck);
-        //System.out.print("I was dealt a ");
-        // Card.printCard(demoCard);
-
-        //b) Write a for loop that repeats the above code 10 times. Make sure
-        //   you are getting random cards
-        for (int i = 0; i <= 10; i++) {
-            Card demoCard = deal(deck);
-            System.out.print("I was dealt a ");
-            Card.printCard(demoCard);
+        for (int k = 0; k < TOTAL_PLAYERS; k++)  {
+            if (k != i) {
+                players[k].bet.winBet();
+            }
         }
         
         
-        //------- End Problem 4 ------------------------------------*/
-    }
-
-    public static void problem5() {
-        System.out.println("-- Problem 5 --------------------");
-
-        //*======= Problem 5 Playing one hand ============
-        //a) Create a player's hand (an array of Cards called hand)
-        //   Since we don't know how many cards we may want to receive,
-        //   make the size of the array at least 10.
-        //   Use a for loop to initialize all the cells of the array
-        //   with a default Card object
-        Card[] hand = new Card[10];
+        System.out.println("Player " + (i+1) + " has BUSTED!!");
 
         
-        for (int i = 0; i < hand.length; i++)  {
-            hand[i] = new Card();
+        //System.out.println("Your current score and bet: " + score + " " + bet);
+        return players[i].getScore();  // return the player's score who went over 21
+    }
+
+    public static Player [] makePlayers(int numPlayers)  {
+        Player[] players = new Player[TOTAL_PLAYERS];
+        for(int i = 0; i < numPlayers; i++) {
+            players[i] = new Player();
+
         }
-
-        //b) Also declare an integer index and set it to 0. This will
-        //   keep track of the index where the next card you receive
-        //   will be stored in the array.
-        int index = 0;
-        //c) As an example of what we are doing, execute these statements
-                hand[index] = deal(deck);
-                 index++;
-                 hand[index] = deal(deck);
-                 index++;
-                 printDeck(hand, index);
-                 System.out.println("The score of your hand is " + handScore(hand));
-
-        //d) So that you don't have to view the default card values that
-        //   aren't being used, copy the printDeck method and make a new
-        //   version that receives the value of index as well. Then execute this:
-        printDeck(hand,index);  // print cards in hand only up to index-1
-
-        //e) If necessary, you could do the same for handScore, so that you
-        //   don't count cards at index or higher.
-
-        //------- End Problem 5 ------------------------------------*/
+        return players;
     }
-
-    public static void problem6() {
-        System.out.println("-- Problem 6 --------------------");
-
-        /*=======  Problem 6 Deal until stay (Extra Credit 1 pt) ============
-        //   We now want to simulate dealing a hand until we have to stop
-        //   Do this with a while loop. The loop should keep running until
-        //   our handScore is 17 or higher. Inside the loop, you should
-        //   deal a card and store it in hand at index, add one to index
-        //   Print out the value of each card as it is dealt, and the score
-        //   When the loop finishes, determine weather the player got 21,
-        //   went bust, or stayed at a value below 21.
-
-        //------- End Problem 6 ------------------------------------*/
-    }
-
-    public static void problem7() {
-        System.out.println("-- Problem 7 (Extra Credit) --------------------");
-
-        /*======= Problem 7 Make a two player game (Extra Credit 1 pt) ============
-        //   By now you have enough tools to make a game where a player
-        //   can enter yes or no if they want to get another card.
-        //   When the player stays or goes bust, you can run the loop
-        //   in problem 6 for the computer's hand. Then determine who
-        //   is the winner. Have fun!
-        //------- End Problem 7 ------------------------------------*/
-    }
-
-    // Define method makeDeck here
 
     public static Card [] makeDeck()  {
         int index = 0;
@@ -232,28 +198,80 @@ public class BlackJack {
     public static void printDeck(Card[] cards, int index) {
         for (int i = 0; i < index; i++)  {
             Card.printCard(cards[i]);
-            
+
         }
     }
     // Define method handScore here
 
-    public static int handScore(Card[] cards)  {
+    public static int handScore(Card[] cards, int scoreSoFar)  {
+        int foundAce = 0;
         int score = 0;       
         for (int i = 0; i < cards.length; i++)  {
-            if (cards[i].getRank() > 11) {
+            if (cards[i].getRank() == 1) {
+                ++foundAce;
+            }
+
+            else if (cards[i].getRank() > 10) {
                 score += 10;
             }
-            else if (cards[i].getRank() <= 11)  {
+
+            else if (cards[i].getRank() <= 10)  {
                 score += cards[i].getRank();
             }
+            else {
+                System.err.println ("BUG in handScore()");
+            }
         }
+        if (foundAce > 0) {  // && player.getScore() >= 11)  {
+
+            if (foundAce == 1) {
+
+                if (scoreSoFar >= 11)
+                    score += 1;
+                else
+                    score += 11;
+            }
+            else  // foundAce = 2
+                score = 12; // Special case on initial hand only
+            //foundAce = 0;    
+        }
+
         return score;
     }
 
-    // Define method deal here
+    public static int hitMe(Player player)  {
+        Card[] card = new Card[1];  // declare Card as a single-element one-dimensional array (reserves space for array)
+        card[0] = new Card();       // declare actual element of the single-element array
+        String answer;
+        do {
+            System.out.println("Hit or Stay? (type 'h' for hit Or 's' to stay) : ");
+            Scanner keyboard = new Scanner(System.in);
+            answer = keyboard.next();
+            System.out.println();
+            if(answer.equalsIgnoreCase("h"))  {
+                card[0] = deal(deck);
+                printDeck(card,1);
+                return handScore(card, player.getScore());
+            }
+            else if(answer.equalsIgnoreCase("s"))  {
+                return -1;
 
+            }
+
+            System.out.println("PLEASE CHOOSE 'h' or 's' ONLY!");
+            System.out.println();
+            
+        } while (!answer.equalsIgnoreCase("h") && !answer.equalsIgnoreCase("s"));
+        return -1;
+    }
+    // Define method deal here
     public static Card deal(Card[] cards)  {
-        int z = (int)(Math.random() * 52); 
+        int z = (int)(Math.random() * 52);
+        while(cards[z].getInPlay())  {
+            z = (int)(Math.random() * 52);
+        }
+        cards[z].setInPlay(true);
         return cards[z];
     }
 }
+

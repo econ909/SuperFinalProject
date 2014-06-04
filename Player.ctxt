@@ -1,0 +1,14 @@
+#BlueJ class context
+comment0.params=
+comment0.target=Player()
+comment1.params=score
+comment1.target=Player(int)
+comment2.params=
+comment2.target=int\ getScore()
+comment3.params=
+comment3.target=Player.Bet\ getBet()
+comment4.params=totalScore
+comment4.target=void\ setScore(int)
+comment5.params=i
+comment5.target=int\ playerHand(int)
+numComments=6
